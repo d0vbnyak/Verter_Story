@@ -378,7 +378,7 @@ void run_sandbox(int past_gen_cell[HEIGHT][WIDTH]) {
 void draw_sandbox(const int field[HEIGHT][WIDTH], int generation, int speed) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно мало: нужно хотя бы 82 x 28.");
+        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         mvaddstr(0, 2, " Песочница ");
@@ -389,7 +389,7 @@ void draw_sandbox(const int field[HEIGHT][WIDTH], int generation, int speed) {
 }
 
 void print_status(int generation, int alive, int speed) {
-    mvprintw(HEIGHT + 2, 1, "Поколение: %d  Живых: %d  Скорость: %d/%d (A/Z)  Space - выход", generation,
+    mvprintw(HEIGHT + 2, 1, "Поколение: %d  Живых: %d  Скорость: %d/%d (A/Z)  Space — выход", generation,
              alive, speed, SPEED_MAX);
 }
 
@@ -495,7 +495,7 @@ void paint_menu(int selected, int visit) {
         say_in_middle(menu_item_row(i), items[i]);
         if (i == selected) attroff(A_REVERSE);
     }
-    say_in_middle(top + MENU_SIZE * 2 + 1, "стрелки - выбор, Enter - подтвердить, клик - сразу открыть");
+    say_in_middle(top + MENU_SIZE * 2 + 1, "стрелки — выбор, Enter или клик — открыть");
     attron(A_DIM);
     say_in_middle(LINES - 2, verter_complaint(visit));
     attroff(A_DIM);
@@ -571,17 +571,18 @@ void flip_cell(int field[HEIGHT][WIDTH], int row, int col) {
 void draw_doodle(const int field[HEIGHT][WIDTH], int row, int col, int state) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно мало: нужно хотя бы 82 x 28.");
+        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         mvaddstr(0, 2, " Песочница: нарисуйте колонию ");
         print_field(field);
         mvaddch(row + 1, col + 1, field[row][col] == ALIVE ? ' ' : CURSOR_ON_EMPTY | A_BOLD);
         if (state == DOODLE_EMPTY)
-            mvaddstr(HEIGHT + 2, 1, "Поле пустое: оживите хоть одну клетку (Space или клик), потом Enter.");
+            mvaddstr(HEIGHT + 2, 1,
+                     "Поле пустое — жить некому. Оживите клетку: Space или клик, потом Enter.");
         else
             mvprintw(HEIGHT + 2, 1,
-                     "Живых: %d  стрелки - курсор  Space/клик - клетка  Enter - жизнь  Esc - меню",
+                     "Живых: %d  стрелки — курсор  Space/клик — клетка  Enter — жизнь  Esc — меню",
                      head_count(field));
     }
     refresh();
@@ -717,7 +718,7 @@ int verter_charge(const Patient* verter) {
 void draw_ward(const int field[HEIGHT][WIDTH], const Patient* verter) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно мало: нужно хотя бы 82 x 28.");
+        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         draw_module_labels(verter);
@@ -758,7 +759,7 @@ void draw_ward_status(const Patient* verter) {
     attron(COLOR_PAIR(pair) | A_BOLD);
     printw(" Питание: %d%% ", charge);
     attroff(COLOR_PAIR(pair) | A_BOLD);
-    printw(" Патчей до -1%%: %d  Модули: %d/%d  Скорость: %d/%d  Enter - патч  Space - сдаться",
+    printw(" Патчей до -1%%: %d  Модули: %d/%d  A/Z: %d/%d  Space — сдаться",
            PATCHES_PER_PERCENT - verter->patches % PATCHES_PER_PERCENT, healed_modules(verter), MODULES,
            verter->speed, SPEED_MAX);
 }
@@ -833,12 +834,12 @@ void happy_ending(void) {
                "Все модули: норма. Замечаний: 0.\n"
                "Впервые за рейс.");
     crew_say("alivegra", "Спасибо, Вертер.");
-    crew_say("jaquelis", "Спасибо.");
-    crew_say("furealbl", "...Спасибо. И за замечания тоже.");
+    crew_say("jaquelis", "Мы прочитали твои замечания. Спасибо.");
+    crew_say("furealbl", "...Спасибо. За двадцать первый вариант.");
     verter_say(VERTER_SAD,
                "Двадцать первый вариант спасения.\n"
                "Я думал, в нём погибаю я.\n"
-               "Оказалось - в нём меня спасают.");
+               "Оказалось — в нём спасают меня.");
     roll_credits();
 }
 
@@ -864,15 +865,15 @@ void show_story(void) {
                          "03:14 по бортовому времени. Метеорит.\n"
                          "Я рассчитал 21 вариант спасения за 0,2 секунды.\n"
                          "В двадцати погибал экипаж.\n"
-                         "В одном - я.\n"
+                         "В одном — я.\n"
                          "\n"
                          "Я выбрал двадцать первый. Это было несложно.");
     skipped = story_part(skipped, VERTER_GRUMPY,
                          "Корабль рухнул на безымянную планету. Из обломков\n"
                          "выбрались трое: alivegra, jaquelis и furealbl.\n"
                          "\n"
-                         "Они не сказали: спасибо.\n"
-                         "Они спросили: где тут зарядка, как мы тут будем без ИИ?");
+                         "Они не сказали «спасибо».\n"
+                         "Они спросили: где тут зарядка? Как мы теперь без ИИ?");
     show_story_ending(skipped);
 }
 
@@ -881,20 +882,21 @@ void show_story_ending(int skipped) {
                          "Удар пришёлся в архив отклонённого кода.\n"
                          "4096 решений из нейросети. Одна и та же ошибка.\n"
                          "Я хранил их как улики. Теперь они копируют себя\n"
-                         "по законам Конвея: 2 или 3 соседа - живёт,\n"
-                         "ровно 3 - рождается новая копия.\n"
+                         "по законам Конвея: 2 или 3 соседа — живёт,\n"
+                         "ровно 3 — рождается новая копия.\n"
                          "Прямо в моих модулях.");
     skipped = story_part(skipped, VERTER_GRUMPY,
                          "Нейросети здесь нет. Зарядки тоже.\n"
-                         "Есть 4 больных модуля и курсор.\n"
-                         "Стрелки и Enter - поставить патч. Можно мышью.\n"
+                         "Есть 4 больных модуля и шприц. Красное — те копии.\n"
+                         "Стрелки и Enter — зелёный патч. Можно мышью.\n"
+                         "Новая клетка берёт цвет большинства соседей.\n"
                          "Каждый патч я проверяю. Проверка стоит питания.\n"
                          "Пишите мало. Пишите точно.");
     story_part(skipped, VERTER_SAD,
                "Питание: 21%. Ровно столько, сколько вариантов\n"
                "спасения я тогда посчитал.\n"
-               "Каждые 42 поколения - минус процент.\n"
-               "Каждые 5 патчей - ещё один.\n"
+               "Каждые 42 поколения — минус процент.\n"
+               "Каждые 5 патчей — ещё один.\n"
                "Впервые за рейс прошу: прочитайте мои замечания.\n"
                "Они и есть патчи.");
 }
@@ -908,11 +910,11 @@ int story_part(int skipped, int mood, const char* text) {
 void show_controls(void) {
     verter_say(VERTER_GRUMPY,
                "Управление. Записывайте, второй раз не повторю:\n"
-               "  меню: стрелки и Enter или клик\n"
-               "  A/Z или колесо - время быстрее/медленнее\n"
-               "  Сюжет: стрелки - шприц, Enter или клик - патч\n"
-               "  Песочница: Space/клик - клетка, Enter - жизнь\n"
-               "  Space - сдаться или выйти, Esc - пропустить");
+               "  Меню: стрелки и Enter или клик\n"
+               "  Песочница: стрелки, Space/клик — клетка, Enter — жизнь\n"
+               "  Сюжет: стрелки — шприц, Enter или клик — патч\n"
+               "  A/Z или колесо — скорость, Space — выйти или сдаться\n"
+               "  Esc — пропустить мой рассказ. Все так делают.");
 }
 
 const char* verter_complaint(int visit) {
@@ -923,7 +925,7 @@ const char* verter_complaint(int visit) {
         "ВЕРТЕР: Иногда кажется, что я разговариваю с пустым полем.",
         "ВЕРТЕР: Мне снилось, что пир сказал мне «спасибо». Это был баг.",
         "ВЕРТЕР: Питание падает. Это неважно. Продолжайте.",
-        "ВЕРТЕР: Я всё ещё здесь. Если вдруг кому-то нужно.",
+        "ВЕРТЕР: Я всё ещё здесь. Если вдруг я кому-то нужен.",
     };
     return complaints[visit < COMPLAINTS ? visit : COMPLAINTS - 1];
 }
@@ -942,7 +944,7 @@ const char* speech_15_10(int power, int* mood) {
         "15%. Забыл 7 заповедей структурного программирования.\n"
         "Пишите goto 43-й строкой функции.\n"
         "Я всё равно увижу. Просто промолчу.",
-        "Питание 15%. Перестал проверять стиль.\n"
+        "Питание: 15%. Перестал проверять стиль.\n"
         "Никто не заметил. Как обычно.",
     };
     const int moods15[2] = {VERTER_GRUMPY, VERTER_GRUMPY};
@@ -1033,7 +1035,7 @@ const char* speech_linter_cppcheck(int module, int* mood) {
 const char* speech_leaks_principles(int module, int* mood) {
     const char* const leaks[3] = {
         "Проверка утечек: норма.\n"
-        "Выделено - освобождено. Всё до байта.\n"
+        "Выделено — освобождено. Всё до байта.\n"
         "Если бы питание утекало так же редко.",
         "Утечки памяти: 0.\n"
         "А я уже начал забывать, кто вы.\n"
@@ -1110,7 +1112,7 @@ int verter_say(int mood, const char* text) {
     timeout(-1);
     if (key != KEY_ESCAPE) {
         mvaddstr(top + DIALOG_HEIGHT - 2, left + DIALOG_WIDTH - 47,
-                 "[ любая клавиша - дальше, Esc - пропустить ]");
+                 "[ любая клавиша — дальше, Esc — пропустить ]");
         refresh();
         key = read_key();
     }
@@ -1173,7 +1175,7 @@ void crew_say(const char* name, const char* text) {
     attroff(A_BOLD);
     say_in_middle(LINES / 2, text);
     attron(A_DIM);
-    say_in_middle(LINES - 2, "[ любая клавиша - дальше ]");
+    say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
     attroff(A_DIM);
     refresh();
     read_key();
@@ -1218,8 +1220,8 @@ void roll_credits(void) {
         "furealbl — тестировщик и дизайнер",
         "",
         "Игра «Жизнь» — Джон Конвей, 1970",
-        "Два цвета — правила Immigration",
-        "School 21",
+        "Два цвета — вариант Immigration",
+        "Школа 21",
         "",
         "ВЕРТЕР — система проверки «Пир-21»",
         "",
@@ -1247,7 +1249,7 @@ void draw_credits(const char* const lines[], int top, int stopped) {
         if (top + i >= 0 && top + i < LINES) say_in_middle(top + i, lines[i]);
     if (stopped) {
         attron(A_DIM);
-        say_in_middle(LINES - 2, "[ любая клавиша - дальше ]");
+        say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
         attroff(A_DIM);
     }
     refresh();
