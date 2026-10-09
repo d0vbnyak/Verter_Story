@@ -1,0 +1,10 @@
+# Собранная программа и мусор сборки — в git не кладём
+game_of_life
+src/game_of_life
+stage
+*.o
+a.out
+src/a.out
+*.dSYM/
+stages/
+book/
