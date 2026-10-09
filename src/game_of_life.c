@@ -214,7 +214,6 @@ int read_key(void);
 void hands_off_keyboard(void);
 int letter_bytes(const char* text);
 
-// Этап Г. Перед игрой — заставка. С файлом Вертер скажет одну реплику и пустит в Песочницу.
 int main(void) {
     int past_gen_cell[HEIGHT][WIDTH];
     int from_file = input_is_file();
@@ -351,7 +350,6 @@ void init_palette(void) {
     }
 }
 
-// Мышь. Каждое событие приходит из getch() как клавиша KEY_MOUSE, а подробности отдаёт getmouse.
 // Склейка нажатия с отпусканием — всего MOUSE_MERGE мс. С mouseinterval(0) тап тачпада (нажатие
 // и отпускание одним пакетом) терялся: второе событие застревало до следующего ввода. А обычная
 // склейка (1/6 с) сливала быстрые клики по разным клеткам в один «двойной». С 1 мс склеивается
@@ -361,8 +359,6 @@ void init_mouse(void) {
     if (mousemask(MOUSE_EVENTS, NULL) != 0) mouseinterval(MOUSE_MERGE);
 }
 
-// Мышь в Песочнице: колесо превращается в 'a'/'z' для change_speed, клик переключает клетку.
-// Если колония вымерла, Вертер один раз это прокомментирует (mourn_the_colony).
 void run_sandbox(int past_gen_cell[HEIGHT][WIDTH]) {
     int next_gen_cell[HEIGHT][WIDTH];
     int generation = 1;
@@ -407,7 +403,6 @@ void print_status(int generation, int alive, int speed) {
              alive, speed, SPEED_MAX);
 }
 
-// Возвращает новое значение флага «уже сказал»: реплика о вымершей колонии звучит один раз.
 int mourn_the_colony(const int field[HEIGHT][WIDTH], int already_mourned) {
     int mourned = already_mourned;
     if (!mourned && head_count(field) == 0) {
@@ -453,7 +448,6 @@ long long hold_the_clock(long long next_tick, int speed) {
     return result;
 }
 
-// visit — который раз игрок в меню: от него зависит, на что сейчас жалуется Вертер под пунктами.
 void hang_out_in_menu(void) {
     int choice = MENU_STORY;
     int visit = 0;
@@ -471,8 +465,6 @@ void hang_out_in_menu(void) {
     }
 }
 
-// Клик по пункту выбирает его и сразу подтверждает, как Enter. Потом пауза MOUSE_SETTLE и чистка
-// очередей: второй клик двойного клика не должен достаться следующему экрану.
 int pick_your_poison(int selected, int visit) {
     int key = 0;
     mouse_flush();
@@ -551,7 +543,6 @@ void sandbox_from_scratch(void) {
     }
 }
 
-// Клик мышью в редакторе — как Space на клетке под мышью, и курсор переезжает туда же.
 int doodle_colony(int field[HEIGHT][WIDTH]) {
     int state = DOODLE_GOING;
     int row = HEIGHT / 2;
@@ -619,9 +610,6 @@ void draw_doodle(const int field[HEIGHT][WIDTH], int row, int col, int state) {
     refresh();
 }
 
-// Перед лечением Вертер рассказывает историю (Esc пропускает её целиком).
-// last_charge — питание, о котором Вертер уже знает: по нему видно, что перешли порог 15/10/5/1%.
-// healed_before и relapse_said — флаги «уже сказал»: каждая реплика о модуле звучит один раз.
 void run_story(void) {
     int field[HEIGHT][WIDTH];
     // Сюжет стартует медленнее Песочницы: на скорости 5 шприц с клавиатуры не успевал за вирусами.
@@ -673,8 +661,6 @@ void drop_shape(int field[HEIGHT][WIDTH], int shape, int top, int left) {
 
 int which_module(int row, int col) { return (row >= HALF_HEIGHT) * 2 + (col >= HALF_WIDTH); }
 
-// Пока открыто окно Вертера, часы поколений идут. После окна next_tick уже в прошлом: случится
-// ровно одно поколение, а следующее — уже через обычную паузу. Пачки поколений не будет.
 int treat_verter(int field[HEIGHT][WIDTH], Patient* verter) {
     int next[HEIGHT][WIDTH];
     int outcome = STORY_GOING;
@@ -697,7 +683,6 @@ int treat_verter(int field[HEIGHT][WIDTH], Patient* verter) {
     return outcome;
 }
 
-// Мышь в Сюжете: клик — шприц переезжает на клетку и сразу ставит патч, колесо — скорость.
 int doctor_hands(int field[HEIGHT][WIDTH], Patient* verter, int key) {
     if (key == KEY_MOUSE) key = doctor_mouse(field, verter);
     verter->speed = change_speed(verter->speed, key);
@@ -715,8 +700,6 @@ void inject_patch(int field[HEIGHT][WIDTH], Patient* verter) {
     }
 }
 
-// before — вирусы по модулям до пересчёта: сравнивая «до» и «после», Вертер замечает,
-// что модуль вылечился или заразился снова.
 int check_pulse(const int field[HEIGHT][WIDTH], Patient* verter) {
     int outcome = STORY_GOING;
     int before[MODULES];
@@ -828,8 +811,6 @@ chtype paint_cell(int state, int in_story) {
     return look;
 }
 
-// Две концовки. Победа — пиры наконец говорят «спасибо», потом титры. Поражение — последние слова
-// Вертера обрываются на полуслове. Сдался — молча в меню: Вертер подождёт.
 void show_verdict(int outcome) {
     if (outcome == STORY_WON)
         happy_ending();
@@ -847,14 +828,11 @@ void show_verdict(int outcome) {
                    "Я подожду.");
 }
 
-// Всё, что Вертер замечает после очередного шага: порог питания и перемены в модулях.
 void verter_notices(Patient* verter, const int before[MODULES]) {
     power_notice(verter);
     for (int module = 0; module < MODULES; module++) module_notice(verter, module, before[module]);
 }
 
-// Питание падает и от времени, и от патчей, и иногда сразу на 2%. Поэтому ловим не «стало ровно 15»,
-// а «было выше порога, стало порог или ниже». 0% — не порог, а концовка: её покажет show_verdict.
 void power_notice(Patient* verter) {
     int charge = verter_charge(verter);
     int threshold = crossed_threshold(verter->last_charge, charge);
@@ -866,7 +844,6 @@ void power_notice(Patient* verter) {
     verter->last_charge = charge;
 }
 
-// Какой порог перешли между before и now. Если сразу два — самый нижний: он важнее. 0 — ни одного.
 int crossed_threshold(int before, int now) {
     const int thresholds[THRESHOLDS] = {15, 10, 5, 1};
     int crossed = 0;
@@ -875,8 +852,6 @@ int crossed_threshold(int before, int now) {
     return crossed;
 }
 
-// Модуль вылечился впервые — его личная реплика. Вылеченный модуль заразился снова — общая.
-// Оба раза только однажды на модуль: иначе Вертер не дал бы играть.
 void module_notice(Patient* verter, int module, int before) {
     int now = verter->bad_guys[module];
     int mood = VERTER_SAD;
@@ -905,8 +880,6 @@ void happy_ending(void) {
     roll_credits();
 }
 
-// История: первые четыре окна — из «Пир-21», дальше — новая завязка про код из ИИ.
-// skipped — нажат ли уже Esc: тогда остальные окна не показываются.
 void show_story(void) {
     int skipped = 0;
     skipped = story_part(skipped, VERTER_STRICT,
@@ -1054,8 +1027,6 @@ const char* speech_5_1(int power, int* mood) {
     return text;
 }
 
-// У каждого модуля три варианта реплики, звучит один наугад. Тексты разложены на две функции
-// по два модуля, чтобы каждая уложилась в 42 строки.
 const char* healed_speech(int module, int* mood) {
     const char* text;
     if (module < 2)
@@ -1157,8 +1128,6 @@ const char* extinct_speech(int* mood) {
     return pick_speech(2, texts, moods, mood);
 }
 
-// Случайный вариант из count: rand() % count — число от 0 до count - 1, всегда внутри массива.
-// Настроение берётся из moods под тем же номером, что и текст, и пишется через указатель.
 const char* pick_speech(int count, const char* const texts[], const int moods[], int* mood) {
     int pick = rand() % count;
     *mood = moods[pick];
@@ -1168,10 +1137,9 @@ const char* pick_speech(int count, const char* const texts[], const int moods[],
 // Обычное окно: Esc здесь ничего не пропускает (равен любой клавише), поэтому и не обещаем его.
 int verter_say(int mood, const char* text) { return verter_speaks(mood, text, "[ любая клавиша — дальше ]"); }
 
-// Окно Вертера. Текст печатается по букве; любая клавиша допечатывает реплику сразу, следующая
-// закрывает окно. Esc закрывает сразу. Возвращает клавишу, которой закрыли, — так история узнаёт про Esc.
-// hint — подсказка внизу окна, "" — без неё. В узком окне рамку прижимаем к левому краю (не < 0):
-// так видны лицо и начало реплики, а не обрубок справа.
+// Окно Вертера с подсказкой hint ("" — без неё). Возвращает клавишу, которой закрыли: так история
+// узнаёт про Esc. В узком окне рамку прижимаем к левому краю (не < 0): так видны лицо и начало
+// реплики, а не обрубок справа.
 int verter_speaks(int mood, const char* text, const char* hint) {
     int top = LINES > DIALOG_HEIGHT ? (LINES - DIALOG_HEIGHT) / 2 : 0;
     int left = COLS > DIALOG_WIDTH ? (COLS - DIALOG_WIDTH) / 2 : 0;
@@ -1194,16 +1162,12 @@ int verter_speaks(int mood, const char* text, const char* hint) {
     return key;
 }
 
-// Окно посреди игры. Пока Вертер печатает, игрок мог жать клавиши — лишний Space после окна
-// выкинул бы из игры. flushinp и mouse_flush выбрасывают всё накопленное.
 void verter_interrupts(int mood, const char* text) {
     verter_say(mood, text);
     flushinp();
     mouse_flush();
 }
 
-// '\n' — следующая строка окна. Русская буква — 2 байта, печатаем её целиком через letter_bytes.
-// После первого нажатия key != ERR, и остаток печатается без пауз.
 int type_text(int top, int left, const char* text) {
     int row = 0;
     int col = 0;
@@ -1224,7 +1188,6 @@ int type_text(int top, int left, const char* text) {
     return key;
 }
 
-// Рамка, имя и лицо. Чем печальнее настроение, тем печальнее глаза и рот.
 void draw_dialog(int top, int left, int mood) {
     const char* const eyes[] = {" o   o ", " -   - ", " ;   ; "};
     const char* const mouths[] = {" [===] ", " [---] ", "  /-\\  "};
@@ -1242,7 +1205,6 @@ void draw_dialog(int top, int left, int mood) {
     mvaddstr(top + 6, left + 3, mouths[mood]);
 }
 
-// Реплика экипажа: в окне Вертера его лицо и имя, а говорит пир — поэтому отдельный экран.
 void crew_say(const char* name, const char* text) {
     // Как в окне Вертера: «спасибо» экипажа не должна пролистать клавиша из прошлого окна.
     flushinp();
@@ -1275,7 +1237,6 @@ void show_splash(void) {
     read_key();
 }
 
-// Каждый '#' логотипа — пробел с A_REVERSE, то есть сплошной блок. С цветами блок зелёный.
 void draw_logo_line(int row, const char* line) {
     int left = (COLS - how_wide(line)) / 2;
     chtype block = ' ' | A_REVERSE | COLOR_PAIR(has_colors() ? PAIR_LOGO : 0);
@@ -1283,9 +1244,6 @@ void draw_logo_line(int row, const char* line) {
         if (line[i] == '#') mvaddch(row, left + i, block);
 }
 
-// Титры ползут снизу вверх — тот же игровой цикл: timeout + getch, ERR — пора сдвинуть на строку.
-// Когда весь столбик встал по центру, timeout(-1): ждём любую клавишу. Окончание фразы
-// «Прежде чем...» выбирается наугад при каждом показе.
 void roll_credits(void) {
     const char* const endings[CREDITS_ENDINGS] = {
         "Прежде чем сказать, что он работает.",
@@ -1354,22 +1312,18 @@ int mouse_click(int* y, int* x) {
     return clicked;
 }
 
-// В окнах и титрах «любой клавишей» считается только клик. Нажатие — нет: иначе нажатие закрыло бы
-// окно, а отпускание сработало бы уже на следующем экране.
 int mouse_is_key(void) {
     int y = 0;
     int x = 0;
     return mouse_click(&y, &x);
 }
 
-// Выбрасывает события мыши, которые никто не забрал, — как flushinp() для клавиш.
 void mouse_flush(void) {
     MEVENT event;
     int more = 1;
     while (more) more = getmouse(&event) == OK;
 }
 
-// Номер пункта меню под кликом или -1. Столбец не важен: вся строка пункта — его.
 int mouse_menu_item(void) {
     int item = -1;
     int y = 0;
@@ -1381,9 +1335,6 @@ int mouse_menu_item(void) {
     return item;
 }
 
-// Экранная точка — какая это клетка поля. Поле в рамке: клетка (r, c) стоит в (r + 1, c + 1).
-// Клик по рамке или строке состояния — 0, и *row, *col не меняются: без проверки клик по рамке
-// записал бы field[-1][...] — за пределы массива.
 int screen_to_cell(int y, int x, int* row, int* col) {
     int inside = is_window_big_enough() && y >= 1 && y <= HEIGHT && x >= 1 && x <= WIDTH;
     if (inside) {
@@ -1393,8 +1344,6 @@ int screen_to_cell(int y, int x, int* row, int* col) {
     return inside;
 }
 
-// Колесо от себя — 'a' (быстрее), на себя — 'z' (медленнее). Клик по клетке переключает её.
-// Всё остальное — 0: это не ERR, поэтому лишнего поколения не будет.
 int sandbox_mouse(int field[HEIGHT][WIDTH]) {
     MEVENT event;
     int key = 0;
@@ -1417,7 +1366,6 @@ void doodle_mouse(int field[HEIGHT][WIDTH], int* row, int* col) {
     if (mouse_click(&y, &x) && screen_to_cell(y, x, row, col)) flip_cell(field, *row, *col);
 }
 
-// Клик в Сюжете: шприц переезжает на клетку и ставит патч. Колесо — скорость, как в Песочнице.
 int doctor_mouse(int field[HEIGHT][WIDTH], Patient* verter) {
     MEVENT event;
     int key = 0;
@@ -1467,9 +1415,6 @@ int how_wide(const char* text) {
 
 int is_letter_start(char byte) { return ((unsigned char)byte & 0xC0) != 0x80; }
 
-// getch() для окон, титров и заставки. Русская буква — 2 байта, и 'ф' сработала бы как два нажатия:
-// байты 0x80..0xFF — части русских букв, остальные байты этой буквы выбрасывает flushinp().
-// Мышь считается клавишей, только если это клик; остальные события пропускаем и ждём дальше.
 int read_key(void) {
     int key = getch();
     // KEY_RESIZE — не нажатие: иначе растянутое окно закрывало титры и допечатывало реплику.
@@ -1490,7 +1435,6 @@ void hands_off_keyboard(void) {
     mouse_flush();
 }
 
-// Сколько байт занимает буква в начале text: 1 для латиницы, 2 для кириллицы.
 int letter_bytes(const char* text) {
     int length = 1;
     while (text[length] != '\0' && !is_letter_start(text[length])) length++;
