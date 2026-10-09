@@ -30,6 +30,7 @@
 #define MENU_CREDITS 3
 #define MENU_EXIT 4
 #define MENU_SIZE 5
+#define MENU_BAR 16
 
 #define DOODLE_GOING 0
 #define DOODLE_START 1
@@ -154,6 +155,7 @@ void draw_ward(const int field[HEIGHT][WIDTH], const Patient* verter);
 void draw_module_labels(const Patient* verter);
 void draw_ward_status(const Patient* verter);
 chtype paint_cell(int state, int in_story);
+chtype syringe_look(int state);
 void show_verdict(int outcome);
 
 void verter_notices(Patient* verter, const int before[MODULES]);
@@ -178,6 +180,7 @@ const char* extinct_speech(int* mood);
 const char* pick_speech(int count, const char* const texts[], const int moods[], int* mood);
 
 int verter_say(int mood, const char* text);
+int verter_speaks(int mood, const char* text, const char* hint);
 void verter_interrupts(int mood, const char* text);
 int type_text(int top, int left, const char* text);
 void draw_dialog(int top, int left, int mood);
@@ -198,6 +201,7 @@ int doctor_mouse(int field[HEIGHT][WIDTH], Patient* verter);
 
 void draw_fence(int top, int left, int height, int width);
 int is_window_big_enough(void);
+void ask_for_bigger_window(void);
 void say_in_middle(int row, const char* text);
 int how_wide(const char* text);
 int is_letter_start(char byte);
@@ -378,7 +382,7 @@ void run_sandbox(int past_gen_cell[HEIGHT][WIDTH]) {
 void draw_sandbox(const int field[HEIGHT][WIDTH], int generation, int speed) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
+        ask_for_bigger_window();
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         mvaddstr(0, 2, " Песочница ");
@@ -491,7 +495,12 @@ void paint_menu(int selected, int visit) {
     say_in_middle(top - 3, "=== V E R T E R   S T O R Y ===");
     attroff(A_BOLD);
     for (int i = 0; i < MENU_SIZE; i++) {
-        if (i == selected) attron(A_REVERSE);
+        // Выбранный пункт — полоса одной ширины, а не только слово: курсор меню виден сразу,
+        // и «Титры» не выглядят мельче «Управления».
+        if (i == selected) {
+            mvhline(menu_item_row(i), (COLS - MENU_BAR) / 2, ' ' | A_REVERSE, MENU_BAR);
+            attron(A_REVERSE);
+        }
         say_in_middle(menu_item_row(i), items[i]);
         if (i == selected) attroff(A_REVERSE);
     }
@@ -571,12 +580,15 @@ void flip_cell(int field[HEIGHT][WIDTH], int row, int col) {
 void draw_doodle(const int field[HEIGHT][WIDTH], int row, int col, int state) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
+        ask_for_bigger_window();
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         mvaddstr(0, 2, " Песочница: нарисуйте колонию ");
         print_field(field);
-        mvaddch(row + 1, col + 1, field[row][col] == ALIVE ? ' ' : CURSOR_ON_EMPTY | A_BOLD);
+        // На живой клетке курсор — '+' на светлом блоке: раньше там была дыра, и одиночная живая
+        // клетка под курсором выглядела пустой — казалось, что Space не сработал.
+        mvaddch(row + 1, col + 1,
+                CURSOR_ON_EMPTY | A_BOLD | (field[row][col] == ALIVE ? A_REVERSE : A_NORMAL));
         if (state == DOODLE_EMPTY)
             mvaddstr(HEIGHT + 2, 1,
                      "Поле пустое — жить некому. Оживите клетку: Space или клик, потом Enter.");
@@ -718,10 +730,13 @@ int verter_charge(const Patient* verter) {
 void draw_ward(const int field[HEIGHT][WIDTH], const Patient* verter) {
     erase();
     if (!is_window_big_enough()) {
-        say_in_middle(LINES / 2, "Окно маловато: нужно хотя бы 82×28.");
+        ask_for_bigger_window();
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         draw_module_labels(verter);
+        // Подсказка про патч — на рамке справа: там свободно, а строка состояния уже на пределе 80.
+        const char* hint = " Enter/клик — патч ";
+        mvaddstr(0, WIDTH - how_wide(hint), hint);
         for (int row = 0; row < HEIGHT; row++)
             for (int col = 0; col < WIDTH; col++) {
                 chtype look = paint_cell(field[row][col], 1);
@@ -730,7 +745,7 @@ void draw_ward(const int field[HEIGHT][WIDTH], const Patient* verter) {
             }
         int row = verter->syringe_row;
         int col = verter->syringe_col;
-        mvaddch(row + 1, col + 1, (paint_cell(field[row][col], 1) & ~A_CHARTEXT) | '+' | A_BOLD);
+        mvaddch(row + 1, col + 1, syringe_look(field[row][col]));
         draw_ward_status(verter);
     }
     refresh();
@@ -742,7 +757,8 @@ void draw_module_labels(const Patient* verter) {
         int row = module < 2 ? 0 : HEIGHT + 1;
         int col = 2 + (module % 2) * HALF_WIDTH;
         int healed = verter->bad_guys[module] == 0;
-        int pair = healed && has_colors() ? PAIR_HEALED : 0;
+        // Больной модуль подписан красным, как его вирусы, — с одного взгляда видно, где ещё лечить.
+        int pair = has_colors() ? (healed ? PAIR_HEALED : PAIR_VIRUS) : 0;
         attron(COLOR_PAIR(pair) | A_BOLD);
         if (healed)
             mvprintw(row, col, " %s: чисто ", names[module]);
@@ -754,14 +770,25 @@ void draw_module_labels(const Patient* verter) {
 
 void draw_ward_status(const Patient* verter) {
     int charge = verter_charge(verter);
-    int pair = charge <= POWER_ALARM && has_colors() ? PAIR_ALARM : 0;
+    // Тревога: с цветами — белым по красному, без цветов — инверсией, иначе её не видно вовсе.
+    chtype alarm = has_colors() ? COLOR_PAIR(PAIR_ALARM) : A_REVERSE;
+    chtype look = (charge <= POWER_ALARM ? alarm : A_NORMAL) | A_BOLD;
     move(HEIGHT + 2, 1);
-    attron(COLOR_PAIR(pair) | A_BOLD);
+    attron(look);
     printw(" Питание: %d%% ", charge);
-    attroff(COLOR_PAIR(pair) | A_BOLD);
+    attroff(look);
     printw(" Патчей до -1%%: %d  Модули: %d/%d  A/Z: %d/%d  Space — сдаться",
            PATCHES_PER_PERCENT - verter->patches % PATCHES_PER_PERCENT, healed_modules(verter), MODULES,
            verter->speed, SPEED_MAX);
+}
+
+// Шприц — '+' поверх клетки, в цвете вируса или патча. На пустой клетке с цветами — светлый блок:
+// жирный '+' сливался с точками границы модулей, а шприц стартует ровно на их пересечении.
+// Без цветов светлый блок — это вирус, поэтому там на пустой клетке остаётся жирный '+'.
+chtype syringe_look(int state) {
+    chtype look = (paint_cell(state, 1) & ~A_CHARTEXT) | '+' | A_BOLD;
+    if (state == DEAD && has_colors()) look |= A_REVERSE;
+    return look;
 }
 
 chtype paint_cell(int state, int in_story) {
@@ -779,10 +806,11 @@ chtype paint_cell(int state, int in_story) {
 void show_verdict(int outcome) {
     if (outcome == STORY_WON)
         happy_ending();
-    else if (outcome == STORY_LOST)
-        verter_say(VERTER_SAD,
-                   "Питание: 0%. Проверка завершена.\n"
-                   "Спасибо, что...");
+    else if (outcome == STORY_LOST)  // без подсказки: реплика так и остаётся оборванной
+        verter_speaks(VERTER_SAD,
+                      "Питание: 0%. Проверка завершена.\n"
+                      "Спасибо, что...",
+                      "");
 }
 
 // Всё, что Вертер замечает после очередного шага: порог питания и перемены в модулях.
@@ -903,7 +931,9 @@ void show_story_ending(int skipped) {
 
 int story_part(int skipped, int mood, const char* text) {
     int result = skipped;
-    if (!skipped) result = verter_say(mood, text) == KEY_ESCAPE;
+    // Только в истории Esc действительно пропускает остальное — только здесь о нём и подсказка.
+    if (!skipped)
+        result = verter_speaks(mood, text, "[ любая клавиша — дальше, Esc — пропустить ]") == KEY_ESCAPE;
     return result;
 }
 
@@ -1101,18 +1131,25 @@ const char* pick_speech(int count, const char* const texts[], const int moods[],
     return texts[pick];
 }
 
+// Обычное окно: Esc здесь ничего не пропускает (равен любой клавише), поэтому и не обещаем его.
+int verter_say(int mood, const char* text) { return verter_speaks(mood, text, "[ любая клавиша — дальше ]"); }
+
 // Окно Вертера. Текст печатается по букве; любая клавиша допечатывает реплику сразу, следующая
 // закрывает окно. Esc закрывает сразу. Возвращает клавишу, которой закрыли, — так история узнаёт про Esc.
-int verter_say(int mood, const char* text) {
-    int top = (LINES - DIALOG_HEIGHT) / 2;
-    int left = (COLS - DIALOG_WIDTH) / 2;
+// hint — подсказка внизу окна, "" — без неё. В узком окне рамку прижимаем к левому краю (не < 0):
+// так видны лицо и начало реплики, а не обрубок справа.
+int verter_speaks(int mood, const char* text, const char* hint) {
+    int top = LINES > DIALOG_HEIGHT ? (LINES - DIALOG_HEIGHT) / 2 : 0;
+    int left = COLS > DIALOG_WIDTH ? (COLS - DIALOG_WIDTH) / 2 : 0;
     draw_dialog(top, left, mood);
     timeout(TYPE_DELAY);
     int key = type_text(top + 3, left + TEXT_OFFSET, text);
     timeout(-1);
     if (key != KEY_ESCAPE) {
-        mvaddstr(top + DIALOG_HEIGHT - 2, left + DIALOG_WIDTH - 47,
-                 "[ любая клавиша — дальше, Esc — пропустить ]");
+        // Тусклая, как в окнах экипажа и титрах: подсказка не должна спорить с репликой.
+        attron(A_DIM);
+        mvaddstr(top + DIALOG_HEIGHT - 2, left + DIALOG_WIDTH - 3 - how_wide(hint), hint);
+        attroff(A_DIM);
         refresh();
         key = read_key();
     }
@@ -1231,10 +1268,10 @@ void roll_credits(void) {
         "Спасибо, Вертер",
     };
     int top = LINES;
-    int stop = (LINES - CREDITS_SIZE) / 2;
     int key = ERR;
     flushinp();
     while (key == ERR) {
+        int stop = (LINES - CREDITS_SIZE) / 2;  // каждый кадр заново: окно могли растянуть
         draw_credits(lines, top, top <= stop);
         timeout(top > stop ? CREDITS_DELAY : -1);
         key = read_key();
@@ -1245,8 +1282,13 @@ void roll_credits(void) {
 
 void draw_credits(const char* const lines[], int top, int stopped) {
     erase();
-    for (int i = 0; i < CREDITS_SIZE; i++)
+    for (int i = 0; i < CREDITS_SIZE; i++) {
+        // Название и последнее «Спасибо, Вертер» жирным — как заголовок меню: это рамка титров.
+        chtype look = i == 0 || i == CREDITS_SIZE - 1 ? A_BOLD : A_NORMAL;
+        attron(look);
         if (top + i >= 0 && top + i < LINES) say_in_middle(top + i, lines[i]);
+        attroff(look);
+    }
     if (stopped) {
         attron(A_DIM);
         say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
@@ -1360,6 +1402,17 @@ void draw_fence(int top, int left, int height, int width) {
 
 int is_window_big_enough(void) { return LINES >= HEIGHT + 3 && COLS >= WIDTH + 2; }
 
+// Две короткие строки вместо одной длинной: длинная в узком окне не печаталась совсем (столбец < 0).
+// Текущий размер виден сразу — понятно, насколько ещё растянуть окно.
+void ask_for_bigger_window(void) {
+    char now[64];
+    char need[64];
+    snprintf(now, sizeof(now), "Окно маловато: %d×%d.", COLS, LINES);
+    snprintf(need, sizeof(need), "Нужно хотя бы %d×%d.", WIDTH + 2, HEIGHT + 3);
+    say_in_middle(LINES / 2 - 1, now);
+    say_in_middle(LINES / 2, need);
+}
+
 void say_in_middle(int row, const char* text) { mvaddstr(row, (COLS - how_wide(text)) / 2, text); }
 
 int how_wide(const char* text) {
@@ -1375,7 +1428,8 @@ int is_letter_start(char byte) { return ((unsigned char)byte & 0xC0) != 0x80; }
 // Мышь считается клавишей, только если это клик; остальные события пропускаем и ждём дальше.
 int read_key(void) {
     int key = getch();
-    while (key == KEY_MOUSE && !mouse_is_key()) key = getch();
+    // KEY_RESIZE — не нажатие: иначе растянутое окно закрывало титры и допечатывало реплику.
+    while ((key == KEY_MOUSE && !mouse_is_key()) || key == KEY_RESIZE) key = getch();
     if (key >= 0x80 && key <= 0xFF) flushinp();
     return key;
 }
