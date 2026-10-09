@@ -8,3 +8,9 @@ src/a.out
 *.dSYM/
 stages/
 book/
+
+# Реплики Вертера (черновики и выбранные)
+verter_*.md
+
+# Конфиг clang-format для автоформата в редакторе
+src/.clang-format

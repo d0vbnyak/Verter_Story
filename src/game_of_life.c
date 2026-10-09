@@ -8,11 +8,13 @@
 void kill_all(int field[HEIGHT][WIDTH]);
 void print_field(const int field[HEIGHT][WIDTH]);
 void get_pattern(int field[HEIGHT][WIDTH]);
+int why_is_my_neighbor(const int field[HEIGHT][WIDTH], int row, int col);
 
 int main(void) {
     int field[HEIGHT][WIDTH];
     get_pattern(field);
     print_field(field);
+    printf("%d", why_is_my_neighbor(field, 0, 0));
 
     return 0;
 }
@@ -47,4 +49,16 @@ void print_field(const int field[HEIGHT][WIDTH]) {
         }
         printf("\n");
     }
+}
+
+int why_is_my_neighbor(const int field[HEIGHT][WIDTH], int row, int col) {
+    int neighbor_count = 0;
+    for (int dr = -1; dr <= 1; dr++) {
+        for (int dc = -1; dc <= 1; dc++) {
+            if ((dr != 0 || dc != 0) &&
+                field[(row + dr + HEIGHT) % HEIGHT][(col + dc + WIDTH) % WIDTH] == ALIVE)
+                neighbor_count++;
+        }
+    }
+    return neighbor_count;
 }
