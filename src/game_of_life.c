@@ -21,6 +21,7 @@
 #define SPEED_MIN 1
 #define SPEED_MAX 10
 #define SPEED_START 5
+#define STORY_SPEED_START 3
 #define DELAY_FASTEST 30
 #define DELAY_STEP 12
 
@@ -84,8 +85,11 @@
 #define CREDITS_DELAY 150
 
 #define MOUSE_EVENTS (ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION)
-#define MOUSE_CLICK BUTTON1_RELEASED
+#define MOUSE_CLICK (BUTTON1_RELEASED | BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON1_TRIPLE_CLICKED)
+#define MOUSE_MERGE 1
 #define MOUSE_SETTLE 250
+#define KEYS_SETTLE 300
+#define KEYS_QUIET 150
 
 typedef struct {
     int generation;
@@ -123,6 +127,7 @@ int change_speed(int speed, int key);
 int speed_delay(int speed);
 long long what_time_is_it(void);
 int how_long_to_wait(long long deadline);
+long long hold_the_clock(long long next_tick, int speed);
 
 void hang_out_in_menu(void);
 int pick_your_poison(int selected, int visit);
@@ -206,6 +211,7 @@ void say_in_middle(int row, const char* text);
 int how_wide(const char* text);
 int is_letter_start(char byte);
 int read_key(void);
+void hands_off_keyboard(void);
 int letter_bytes(const char* text);
 
 // Этап Г. Перед игрой — заставка. С файлом Вертер скажет одну реплику и пустит в Песочницу.
@@ -346,10 +352,13 @@ void init_palette(void) {
 }
 
 // Мышь. Каждое событие приходит из getch() как клавиша KEY_MOUSE, а подробности отдаёт getmouse.
-// mouseinterval(0) — не склеивать нажатие и отпускание в «клик»: склейка ждёт 1/6 секунды
-// и теряет клик, если рука дрогнула. Терминал без мыши: mousemask вернёт 0, играем клавиатурой.
+// Склейка нажатия с отпусканием — всего MOUSE_MERGE мс. С mouseinterval(0) тап тачпада (нажатие
+// и отпускание одним пакетом) терялся: второе событие застревало до следующего ввода. А обычная
+// склейка (1/6 с) сливала быстрые клики по разным клеткам в один «двойной». С 1 мс склеивается
+// только пакет, обычный клик приходит как отпускание. Поэтому кликом считаются и RELEASED,
+// и CLICKED (а DOUBLE/TRIPLE — про запас). Терминал без мыши: mousemask вернёт 0, играем клавиатурой.
 void init_mouse(void) {
-    if (mousemask(MOUSE_EVENTS, NULL) != 0) mouseinterval(0);
+    if (mousemask(MOUSE_EVENTS, NULL) != 0) mouseinterval(MOUSE_MERGE);
 }
 
 // Мышь в Песочнице: колесо превращается в 'a'/'z' для change_speed, клик переключает клетку.
@@ -367,6 +376,7 @@ void run_sandbox(int past_gen_cell[HEIGHT][WIDTH]) {
         timeout(how_long_to_wait(next_tick));
         key = getch();
         if (key == KEY_MOUSE) key = sandbox_mouse(past_gen_cell);
+        next_tick = hold_the_clock(next_tick, speed);
         if (what_time_is_it() >= next_tick) {
             next_generation(past_gen_cell, next_gen_cell);
             copy_gen(next_gen_cell, past_gen_cell);
@@ -432,6 +442,15 @@ long long what_time_is_it(void) {
 int how_long_to_wait(long long deadline) {
     long long left = deadline - what_time_is_it();
     return left > 0 ? (int)left : 0;
+}
+
+// Пока окно мало, поля не видно — часы поколений стоят: иначе вирусы росли бы, а питание утекало
+// вслепую, и игрок проигрывал, не видя поля. Срок следующего поколения каждый раз отодвигается
+// на целую паузу, поэтому после растягивания окна первое поколение придёт не сразу, а в свой черёд.
+long long hold_the_clock(long long next_tick, int speed) {
+    long long result = next_tick;
+    if (!is_window_big_enough()) result = what_time_is_it() + speed_delay(speed);
+    return result;
 }
 
 // visit — который раз игрок в меню: от него зависит, на что сейчас жалуется Вертер под пунктами.
@@ -605,8 +624,9 @@ void draw_doodle(const int field[HEIGHT][WIDTH], int row, int col, int state) {
 // healed_before и relapse_said — флаги «уже сказал»: каждая реплика о модуле звучит один раз.
 void run_story(void) {
     int field[HEIGHT][WIDTH];
-    Patient verter = {1,           SPEED_START,  0,           HEIGHT / 2, WIDTH / 2, {0, 0, 0, 0},
-                      POWER_START, {0, 0, 0, 0}, {0, 0, 0, 0}};
+    // Сюжет стартует медленнее Песочницы: на скорости 5 шприц с клавиатуры не успевал за вирусами.
+    Patient verter = {1,           STORY_SPEED_START, 0,           HEIGHT / 2, WIDTH / 2, {0, 0, 0, 0},
+                      POWER_START, {0, 0, 0, 0},      {0, 0, 0, 0}};
     show_story();
     infect_verter(field);
     count_bad_guys(field, &verter);
@@ -618,6 +638,10 @@ void infect_verter(int field[HEIGHT][WIDTH]) {
     for (int module = 0; module < MODULES; module++) infect_module(field, module);
 }
 
+// Каждая фигура модуля — в своём слоте столбцов: раньше в каждой четвёртой раскладке фигуры ложились
+// друг на друга и становились другими узорами. 36 столбцов модуля делятся на count слотов (36, 18
+// или 12), фигура шириной до 5 сдвигается в слоте не дальше slot - 7: между соседями всегда
+// 2 пустых столбца, и на старте фигуры не рождают общих клеток. Последняя кончается в 35-м столбце.
 void infect_module(int field[HEIGHT][WIDTH], int module) {
     const int plan[MODULES][3] = {{GLIDER, GLIDER, NO_SHAPE},
                                   {BLINKER, BLOCK, TOAD},
@@ -625,9 +649,11 @@ void infect_module(int field[HEIGHT][WIDTH], int module) {
                                   {LWSS, BEEHIVE, NO_SHAPE}};
     int top = (module / 2) * HALF_HEIGHT;
     int left = (module % 2) * HALF_WIDTH;
-    for (int i = 0; i < 3; i++)
-        if (plan[module][i] != NO_SHAPE)
-            drop_shape(field, plan[module][i], top + 1 + rand() % 8, left + 2 + rand() % 30);
+    int count = 0;
+    for (int i = 0; i < 3; i++) count += plan[module][i] != NO_SHAPE;
+    int slot = (HALF_WIDTH - 4) / count;
+    for (int i = 0; i < count; i++)
+        drop_shape(field, plan[module][i], top + 1 + rand() % 8, left + 2 + i * slot + rand() % (slot - 6));
 }
 
 void drop_shape(int field[HEIGHT][WIDTH], int shape, int top, int left) {
@@ -658,6 +684,7 @@ int treat_verter(int field[HEIGHT][WIDTH], Patient* verter) {
         draw_ward(field, verter);
         timeout(how_long_to_wait(next_tick));
         outcome = doctor_hands(field, verter, getch());
+        next_tick = hold_the_clock(next_tick, verter->speed);
         if (outcome == STORY_GOING && what_time_is_it() >= next_tick) {
             next_generation(field, next);
             copy_gen(next, field);
@@ -1141,6 +1168,9 @@ int verter_say(int mood, const char* text) { return verter_speaks(mood, text, "[
 int verter_speaks(int mood, const char* text, const char* hint) {
     int top = LINES > DIALOG_HEIGHT ? (LINES - DIALOG_HEIGHT) / 2 : 0;
     int left = COLS > DIALOG_WIDTH ? (COLS - DIALOG_WIDTH) / 2 : 0;
+    // Клавиши, нажатые до окна (игрок вёл шприц), не должны допечатать и закрыть его сами.
+    flushinp();
+    mouse_flush();
     draw_dialog(top, left, mood);
     timeout(TYPE_DELAY);
     int key = type_text(top + 3, left + TEXT_OFFSET, text);
@@ -1151,6 +1181,7 @@ int verter_speaks(int mood, const char* text, const char* hint) {
         mvaddstr(top + DIALOG_HEIGHT - 2, left + DIALOG_WIDTH - 3 - how_wide(hint), hint);
         attroff(A_DIM);
         refresh();
+        hands_off_keyboard();
         key = read_key();
     }
     return key;
@@ -1206,6 +1237,9 @@ void draw_dialog(int top, int left, int mood) {
 
 // Реплика экипажа: в окне Вертера его лицо и имя, а говорит пир — поэтому отдельный экран.
 void crew_say(const char* name, const char* text) {
+    // Как в окне Вертера: «спасибо» экипажа не должна пролистать клавиша из прошлого окна.
+    flushinp();
+    mouse_flush();
     erase();
     attron(A_BOLD);
     say_in_middle(LINES / 2 - 2, name);
@@ -1215,6 +1249,7 @@ void crew_say(const char* name, const char* text) {
     say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
     attroff(A_DIM);
     refresh();
+    hands_off_keyboard();
     read_key();
 }
 
@@ -1269,7 +1304,8 @@ void roll_credits(void) {
     };
     int top = LINES;
     int key = ERR;
-    flushinp();
+    // Титры идут сразу после победы: зажатая там стрелка иначе пропустила бы их целиком.
+    hands_off_keyboard();
     while (key == ERR) {
         int stop = (LINES - CREDITS_SIZE) / 2;  // каждый кадр заново: окно могли растянуть
         draw_credits(lines, top, top <= stop);
@@ -1297,8 +1333,9 @@ void draw_credits(const char* const lines[], int top, int stopped) {
     refresh();
 }
 
-// Забирает событие мыши и проверяет, что это клик — левую кнопку отпустили. Да — пишет экранные
-// строку и столбец в *y и *x и возвращает 1. Нет — 0, *y и *x не трогает.
+// Забирает событие мыши и проверяет, что это клик — левую кнопку отпустили (или ncurses сам склеил
+// нажатие с отпусканием, см. init_mouse). Да — пишет экранные строку и столбец в *y и *x
+// и возвращает 1. Нет — 0, *y и *x не трогает.
 int mouse_click(int* y, int* x) {
     MEVENT event;
     int clicked = 0;
@@ -1432,6 +1469,18 @@ int read_key(void) {
     while ((key == KEY_MOUSE && !mouse_is_key()) || key == KEY_RESIZE) key = getch();
     if (key >= 0x80 && key <= 0xFF) flushinp();
     return key;
+}
+
+// Ждём, пока игрок отпустит клавиши. Пауза KEYS_SETTLE — чтобы окно успели увидеть. Потом читаем
+// и выбрасываем всё, пока KEYS_QUIET мс не придёт ни одной клавиши: зажатая клавиша автоповтором
+// шлёт себя каждые ~30 мс, и одного flushinp мало — следующий повтор закрыл бы окно.
+void hands_off_keyboard(void) {
+    int key = OK;
+    napms(KEYS_SETTLE);
+    timeout(KEYS_QUIET);
+    while (key != ERR) key = getch();
+    timeout(-1);
+    mouse_flush();
 }
 
 // Сколько байт занимает буква в начале text: 1 для латиницы, 2 для кириллицы.
