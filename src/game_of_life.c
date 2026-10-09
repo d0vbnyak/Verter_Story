@@ -5,41 +5,44 @@
 #define DEAD 0
 #define ALIVE 1
 
-void kill_all(int field [HEIGHT][WIDTH]);
-void place_glider(int field [HEIGHT][WIDTH]);
-void print_field(const int field [HEIGHT][WIDTH]);
+void kill_all(int field[HEIGHT][WIDTH]);
+void print_field(const int field[HEIGHT][WIDTH]);
+void get_pattern(int field[HEIGHT][WIDTH]);
 
-int main()
-{
+int main(void) {
     int field[HEIGHT][WIDTH];
-    kill_all(field);
-    place_glider(field);
+    get_pattern(field);
     print_field(field);
+
     return 0;
 }
 
-void kill_all(int field [HEIGHT][WIDTH])
-{
-    for(int row = 0; row < HEIGHT; row++)
-        for(int col = 0; col < WIDTH; col++)
-            field[row][col] = DEAD;
+void kill_all(int field[HEIGHT][WIDTH]) {
+    for (int row = 0; row < HEIGHT; row++)
+        for (int col = 0; col < WIDTH; col++) field[row][col] = DEAD;
 }
 
-void place_glider(int field [HEIGHT][WIDTH])
-{
-    field[2][9] = ALIVE;
-    field[3][10] = ALIVE;
-    field[4][8] = ALIVE;
-    field[4][9] = ALIVE;
-    field[4][10] = ALIVE;
+void get_pattern(int field[HEIGHT][WIDTH]) {
+    kill_all(field);
+
+    int row = 0, col = 0;
+
+    int lastchar = getchar();
+    while (lastchar != EOF && row < HEIGHT) {
+        if (lastchar == '\n') {
+            row++;
+            col = 0;
+        } else if (col < WIDTH) {
+            field[row][col] = lastchar == '*' ? ALIVE : DEAD;
+            col++;
+        }
+        lastchar = getchar();
+    }
 }
 
-void print_field(const int field [HEIGHT][WIDTH])
-{
-    for(int row = 0; row < HEIGHT; row++)
-    {
-        for(int col = 0; col < WIDTH; col++)
-        {
+void print_field(const int field[HEIGHT][WIDTH]) {
+    for (int row = 0; row < HEIGHT; row++) {
+        for (int col = 0; col < WIDTH; col++) {
             printf("%c", field[row][col] == ALIVE ? '@' : '.');
         }
         printf("\n");
