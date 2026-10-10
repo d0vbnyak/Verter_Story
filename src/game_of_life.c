@@ -347,7 +347,7 @@ void init_palette(void) {
         init_pair(PAIR_ANTIVIRUS, COLOR_GREEN, COLOR_TERMINAL);
         init_pair(PAIR_HEALED, COLOR_GREEN, COLOR_TERMINAL);
         init_pair(PAIR_ALARM, COLOR_WHITE, COLOR_RED);
-        init_pair(PAIR_LOGO, COLOR_GREEN, COLOR_TERMINAL);
+        init_pair(PAIR_LOGO, COLOR_WHITE, COLOR_TERMINAL);
     }
 }
 
@@ -1242,7 +1242,7 @@ void show_splash(void) {
     draw_logo_line(top + 2, "#   #  ####   ####     #    ####   #### ");
     draw_logo_line(top + 3, " # #   #      #  #     #    #      #  # ");
     draw_logo_line(top + 4, "  #    #####  #   #    #    #####  #   #");
-    say_in_middle(top + 7, "S T O R Y   2 . 0");
+    say_in_middle(top + 7, "S T O R Y");
     say_in_middle(top + 8, "вылечи систему проверки");
     say_in_middle(top + 11, "[ нажмите любую клавишу ]");
     refresh();
@@ -1262,7 +1262,7 @@ void roll_credits(void) {
         "Прежде чем станет некому проверять.",
     };
     const char* const lines[CREDITS_SIZE] = {
-        "V E R T E R   S T O R Y   2 . 0",
+        "V E R T E R   S T O R Y",
         "",
         "alivegra - тимлид",
         "jaquelis - разработчик и сценарист",
