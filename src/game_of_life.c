@@ -168,6 +168,7 @@ void power_notice(Patient* verter);
 int crossed_threshold(int before, int now);
 void module_notice(Patient* verter, int module, int before);
 void happy_ending(void);
+void sad_ending(void);
 
 void show_story(void);
 void show_story_ending(int skipped);
@@ -814,11 +815,8 @@ chtype paint_cell(int state, int in_story) {
 void show_verdict(int outcome) {
     if (outcome == STORY_WON)
         happy_ending();
-    else if (outcome == STORY_LOST)  // без подсказки: реплика так и остаётся оборванной
-        verter_speaks(VERTER_SAD,
-                      "Питание: 0%. Проверка завершена.\n"
-                      "Спасибо, что...",
-                      "");
+    else if (outcome == STORY_LOST)
+        sad_ending();
     else if (outcome == STORY_GAVE_UP)  // сдавшийся мог пропустить историю - тут и подсказка про Z
         verter_say(VERTER_GRUMPY,
                    "Лечение прервано. Оформляю замечание № 4097:\n"
@@ -877,6 +875,20 @@ void happy_ending(void) {
                "Двадцать первый вариант спасения.\n"
                "Я думал, в нём погибаю я.\n"
                "Оказалось - в нём спасают меня.");
+    roll_credits();
+}
+
+// Поражение: последние слова Вертера обрываются (без подсказки внизу окна), потом прощается экипаж.
+// Вертер уже не отвечает - у него 0%. Реплики экипажа - сцена «спасибо» из «Пир-21», которую
+// сценарист выбрал для 0%. После них - титры, как и после победы.
+void sad_ending(void) {
+    verter_speaks(VERTER_SAD,
+                  "Питание: 0%. Проверка завершена.\n"
+                  "Спасибо, что...",
+                  "");
+    crew_say("alivegra", "Мы нашли, где тут зарядка. Поздно, да?");
+    crew_say("jaquelis", "Ты спрашивал, как мы будем без ИИ. Мы попробуем. Сами.");
+    crew_say("furealbl", "Тесты проходят. Все. Без нейросети. Спасибо, Вертер.");
     roll_credits();
 }
 
