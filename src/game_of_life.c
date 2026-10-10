@@ -350,11 +350,11 @@ void init_palette(void) {
     }
 }
 
-// Склейка нажатия с отпусканием — всего MOUSE_MERGE мс. С mouseinterval(0) тап тачпада (нажатие
+// Склейка нажатия с отпусканием - всего MOUSE_MERGE мс. С mouseinterval(0) тап тачпада (нажатие
 // и отпускание одним пакетом) терялся: второе событие застревало до следующего ввода. А обычная
 // склейка (1/6 с) сливала быстрые клики по разным клеткам в один «двойной». С 1 мс склеивается
 // только пакет, обычный клик приходит как отпускание. Поэтому кликом считаются и RELEASED,
-// и CLICKED (а DOUBLE/TRIPLE — про запас). Терминал без мыши: mousemask вернёт 0, играем клавиатурой.
+// и CLICKED (а DOUBLE/TRIPLE - про запас). Терминал без мыши: mousemask вернёт 0, играем клавиатурой.
 void init_mouse(void) {
     if (mousemask(MOUSE_EVENTS, NULL) != 0) mouseinterval(MOUSE_MERGE);
 }
@@ -399,7 +399,7 @@ void draw_sandbox(const int field[HEIGHT][WIDTH], int generation, int speed) {
 }
 
 void print_status(int generation, int alive, int speed) {
-    mvprintw(HEIGHT + 2, 1, "Поколение: %d  Живых: %d  Скорость: %d/%d (A/Z)  Space — выход", generation,
+    mvprintw(HEIGHT + 2, 1, "Поколение: %d  Живых: %d  Скорость: %d/%d (A/Z)  Space - выход", generation,
              alive, speed, SPEED_MAX);
 }
 
@@ -439,7 +439,7 @@ int how_long_to_wait(long long deadline) {
     return left > 0 ? (int)left : 0;
 }
 
-// Пока окно мало, поля не видно — часы поколений стоят: иначе вирусы росли бы, а питание утекало
+// Пока окно мало, поля не видно - часы поколений стоят: иначе вирусы росли бы, а питание утекало
 // вслепую, и игрок проигрывал, не видя поля. Срок следующего поколения каждый раз отодвигается
 // на целую паузу, поэтому после растягивания окна первое поколение придёт не сразу, а в свой черёд.
 long long hold_the_clock(long long next_tick, int speed) {
@@ -506,7 +506,7 @@ void paint_menu(int selected, int visit) {
     say_in_middle(top - 3, "=== V E R T E R   S T O R Y ===");
     attroff(A_BOLD);
     for (int i = 0; i < MENU_SIZE; i++) {
-        // Выбранный пункт — полоса одной ширины, а не только слово: курсор меню виден сразу,
+        // Выбранный пункт - полоса одной ширины, а не только слово: курсор меню виден сразу,
         // и «Титры» не выглядят мельче «Управления».
         if (i == selected) {
             mvhline(menu_item_row(i), (COLS - MENU_BAR) / 2, ' ' | A_REVERSE, MENU_BAR);
@@ -515,7 +515,7 @@ void paint_menu(int selected, int visit) {
         say_in_middle(menu_item_row(i), items[i]);
         if (i == selected) attroff(A_REVERSE);
     }
-    say_in_middle(top + MENU_SIZE * 2 + 1, "стрелки — выбор, Enter или клик — открыть");
+    say_in_middle(top + MENU_SIZE * 2 + 1, "стрелки - выбор, Enter или клик - открыть");
     attron(A_DIM);
     say_in_middle(LINES - 2, verter_complaint(visit));
     attroff(A_DIM);
@@ -595,16 +595,16 @@ void draw_doodle(const int field[HEIGHT][WIDTH], int row, int col, int state) {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         mvaddstr(0, 2, " Песочница: нарисуйте колонию ");
         print_field(field);
-        // На живой клетке курсор — '+' на светлом блоке: раньше там была дыра, и одиночная живая
-        // клетка под курсором выглядела пустой — казалось, что Space не сработал.
+        // На живой клетке курсор - '+' на светлом блоке: раньше там была дыра, и одиночная живая
+        // клетка под курсором выглядела пустой - казалось, что Space не сработал.
         mvaddch(row + 1, col + 1,
                 CURSOR_ON_EMPTY | A_BOLD | (field[row][col] == ALIVE ? A_REVERSE : A_NORMAL));
         if (state == DOODLE_EMPTY)
             mvaddstr(HEIGHT + 2, 1,
-                     "Поле пустое — жить некому. Оживите клетку: Space или клик, потом Enter.");
+                     "Поле пустое - жить некому. Оживите клетку: Space или клик, потом Enter.");
         else
             mvprintw(HEIGHT + 2, 1,
-                     "Живых: %d  стрелки — курсор  Space/клик — клетка  Enter — жизнь  Esc — меню",
+                     "Живых: %d  стрелки - курсор  Space/клик - клетка  Enter - жизнь  Esc - меню",
                      head_count(field));
     }
     refresh();
@@ -626,7 +626,7 @@ void infect_verter(int field[HEIGHT][WIDTH]) {
     for (int module = 0; module < MODULES; module++) infect_module(field, module);
 }
 
-// Каждая фигура модуля — в своём слоте столбцов: раньше в каждой четвёртой раскладке фигуры ложились
+// Каждая фигура модуля - в своём слоте столбцов: раньше в каждой четвёртой раскладке фигуры ложились
 // друг на друга и становились другими узорами. 36 столбцов модуля делятся на count слотов (36, 18
 // или 12), фигура шириной до 5 сдвигается в слоте не дальше slot - 7: между соседями всегда
 // 2 пустых столбца, и на старте фигуры не рождают общих клеток. Последняя кончается в 35-м столбце.
@@ -744,8 +744,8 @@ void draw_ward(const int field[HEIGHT][WIDTH], const Patient* verter) {
     } else {
         draw_fence(0, 0, HEIGHT + 2, WIDTH + 2);
         draw_module_labels(verter);
-        // Подсказка про патч — на рамке справа: там свободно, а строка состояния уже на пределе 80.
-        const char* hint = " Enter/клик — патч ";
+        // Подсказка про патч - на рамке справа: там свободно, а строка состояния уже на пределе 80.
+        const char* hint = " Enter/клик - патч ";
         mvaddstr(0, WIDTH - how_wide(hint), hint);
         for (int row = 0; row < HEIGHT; row++)
             for (int col = 0; col < WIDTH; col++) {
@@ -767,7 +767,7 @@ void draw_module_labels(const Patient* verter) {
         int row = module < 2 ? 0 : HEIGHT + 1;
         int col = 2 + (module % 2) * HALF_WIDTH;
         int healed = verter->bad_guys[module] == 0;
-        // Больной модуль подписан красным, как его вирусы, — с одного взгляда видно, где ещё лечить.
+        // Больной модуль подписан красным, как его вирусы, - с одного взгляда видно, где ещё лечить.
         int pair = has_colors() ? (healed ? PAIR_HEALED : PAIR_VIRUS) : 0;
         attron(COLOR_PAIR(pair) | A_BOLD);
         if (healed)
@@ -780,21 +780,21 @@ void draw_module_labels(const Patient* verter) {
 
 void draw_ward_status(const Patient* verter) {
     int charge = verter_charge(verter);
-    // Тревога: с цветами — белым по красному, без цветов — инверсией, иначе её не видно вовсе.
+    // Тревога: с цветами - белым по красному, без цветов - инверсией, иначе её не видно вовсе.
     chtype alarm = has_colors() ? COLOR_PAIR(PAIR_ALARM) : A_REVERSE;
     chtype look = (charge <= POWER_ALARM ? alarm : A_NORMAL) | A_BOLD;
     move(HEIGHT + 2, 1);
     attron(look);
     printw(" Питание: %d%% ", charge);
     attroff(look);
-    printw(" Патчей до -1%%: %d  Модули: %d/%d  A/Z: %d/%d  Space — сдаться",
+    printw(" Патчей до -1%%: %d  Модули: %d/%d  A/Z: %d/%d  Space - сдаться",
            PATCHES_PER_PERCENT - verter->patches % PATCHES_PER_PERCENT, healed_modules(verter), MODULES,
            verter->speed, SPEED_MAX);
 }
 
-// Шприц — '+' поверх клетки, в цвете вируса или патча. На пустой клетке с цветами — светлый блок:
+// Шприц - '+' поверх клетки, в цвете вируса или патча. На пустой клетке с цветами - светлый блок:
 // жирный '+' сливался с точками границы модулей, а шприц стартует ровно на их пересечении.
-// Без цветов светлый блок — это вирус, поэтому там на пустой клетке остаётся жирный '+'.
+// Без цветов светлый блок - это вирус, поэтому там на пустой клетке остаётся жирный '+'.
 chtype syringe_look(int state) {
     chtype look = (paint_cell(state, 1) & ~A_CHARTEXT) | '+' | A_BOLD;
     if (state == DEAD && has_colors()) look |= A_REVERSE;
@@ -819,7 +819,7 @@ void show_verdict(int outcome) {
                       "Питание: 0%. Проверка завершена.\n"
                       "Спасибо, что...",
                       "");
-    else if (outcome == STORY_GAVE_UP)  // сдавшийся мог пропустить историю — тут и подсказка про Z
+    else if (outcome == STORY_GAVE_UP)  // сдавшийся мог пропустить историю - тут и подсказка про Z
         verter_say(VERTER_GRUMPY,
                    "Лечение прервано. Оформляю замечание № 4097:\n"
                    "«Z замедляет время. Спешить было не обязательно.»\n"
@@ -876,7 +876,7 @@ void happy_ending(void) {
     verter_say(VERTER_SAD,
                "Двадцать первый вариант спасения.\n"
                "Я думал, в нём погибаю я.\n"
-               "Оказалось — в нём спасают меня.");
+               "Оказалось - в нём спасают меня.");
     roll_credits();
 }
 
@@ -900,7 +900,7 @@ void show_story(void) {
                          "03:14 по бортовому времени. Метеорит.\n"
                          "Я рассчитал 21 вариант спасения за 0,2 секунды.\n"
                          "В двадцати погибал экипаж.\n"
-                         "В одном — я.\n"
+                         "В одном - я.\n"
                          "\n"
                          "Я выбрал двадцать первый. Это было несложно.");
     skipped = story_part(skipped, VERTER_GRUMPY,
@@ -917,30 +917,30 @@ void show_story_ending(int skipped) {
                          "Удар пришёлся в архив отклонённого кода.\n"
                          "4096 решений из нейросети. Одна и та же ошибка.\n"
                          "Я хранил их как улики. Теперь они копируют себя\n"
-                         "по законам Конвея: 2 или 3 соседа — живёт,\n"
-                         "ровно 3 — рождается новая копия.\n"
+                         "по законам Конвея: 2 или 3 соседа - живёт,\n"
+                         "ровно 3 - рождается новая копия.\n"
                          "Прямо в моих модулях.");
     skipped = story_part(skipped, VERTER_GRUMPY,
                          "Нейросети здесь нет. Зарядки тоже.\n"
-                         "Есть 4 больных модуля и шприц. Красное — те копии.\n"
-                         "Стрелки и Enter — зелёный патч. Можно мышью.\n"
+                         "Есть 4 больных модуля и шприц. Красное - те копии.\n"
+                         "Стрелки и Enter - зелёный патч. Можно мышью.\n"
                          "Новая клетка берёт цвет большинства соседей.\n"
                          "Каждый патч я проверяю. Проверка стоит питания.\n"
                          "Пишите мало и точно. Z замедляет время. Я подожду.");
     story_part(skipped, VERTER_SAD,
                "Питание: 21%. Ровно столько, сколько вариантов\n"
                "спасения я тогда посчитал.\n"
-               "Каждые 42 поколения — минус процент.\n"
-               "Каждые 5 патчей — ещё один.\n"
+               "Каждые 42 поколения - минус процент.\n"
+               "Каждые 5 патчей - ещё один.\n"
                "Впервые за рейс прошу: прочитайте мои замечания.\n"
                "Они и есть патчи.");
 }
 
 int story_part(int skipped, int mood, const char* text) {
     int result = skipped;
-    // Только в истории Esc действительно пропускает остальное — только здесь о нём и подсказка.
+    // Только в истории Esc действительно пропускает остальное - только здесь о нём и подсказка.
     if (!skipped)
-        result = verter_speaks(mood, text, "[ любая клавиша — дальше, Esc — пропустить ]") == KEY_ESCAPE;
+        result = verter_speaks(mood, text, "[ любая клавиша - дальше, Esc - пропустить ]") == KEY_ESCAPE;
     return result;
 }
 
@@ -948,10 +948,10 @@ void show_controls(void) {
     verter_say(VERTER_GRUMPY,
                "Управление. Записывайте, второй раз не повторю:\n"
                "  Меню: стрелки и Enter или клик\n"
-               "  Песочница: стрелки, Space/клик — клетка, Enter — жизнь\n"
-               "  Сюжет: стрелки — шприц, Enter или клик — патч\n"
-               "  Z/A или колесо — медленнее/быстрее, Space — выход\n"
-               "  Esc — пропустить мой рассказ. Все так делают.");
+               "  Песочница: стрелки, Space/клик - клетка, Enter - жизнь\n"
+               "  Сюжет: стрелки - шприц, Enter или клик - патч\n"
+               "  Z/A или колесо - медленнее/быстрее, Space - выход\n"
+               "  Esc - пропустить мой рассказ. Все так делают.");
 }
 
 const char* verter_complaint(int visit) {
@@ -1070,7 +1070,7 @@ const char* speech_linter_cppcheck(int module, int* mood) {
 const char* speech_leaks_principles(int module, int* mood) {
     const char* const leaks[3] = {
         "Проверка утечек: норма.\n"
-        "Выделено — освобождено. Всё до байта.\n"
+        "Выделено - освобождено. Всё до байта.\n"
         "Если бы питание утекало так же редко.",
         "Утечки памяти: 0.\n"
         "А я уже начал забывать, кто вы.\n"
@@ -1135,9 +1135,9 @@ const char* pick_speech(int count, const char* const texts[], const int moods[],
 }
 
 // Обычное окно: Esc здесь ничего не пропускает (равен любой клавише), поэтому и не обещаем его.
-int verter_say(int mood, const char* text) { return verter_speaks(mood, text, "[ любая клавиша — дальше ]"); }
+int verter_say(int mood, const char* text) { return verter_speaks(mood, text, "[ любая клавиша - дальше ]"); }
 
-// Окно Вертера с подсказкой hint ("" — без неё). Возвращает клавишу, которой закрыли: так история
+// Окно Вертера с подсказкой hint ("" - без неё). Возвращает клавишу, которой закрыли: так история
 // узнаёт про Esc. В узком окне рамку прижимаем к левому краю (не < 0): так видны лицо и начало
 // реплики, а не обрубок справа.
 int verter_speaks(int mood, const char* text, const char* hint) {
@@ -1215,7 +1215,7 @@ void crew_say(const char* name, const char* text) {
     attroff(A_BOLD);
     say_in_middle(LINES / 2, text);
     attron(A_DIM);
-    say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
+    say_in_middle(LINES - 2, "[ любая клавиша - дальше ]");
     attroff(A_DIM);
     refresh();
     hands_off_keyboard();
@@ -1252,15 +1252,15 @@ void roll_credits(void) {
     const char* const lines[CREDITS_SIZE] = {
         "V E R T E R   S T O R Y   2 . 0",
         "",
-        "alivegra — тимлид",
-        "jaquelis — разработчик и сценарист",
-        "furealbl — тестировщик и дизайнер",
+        "alivegra - тимлид",
+        "jaquelis - разработчик и сценарист",
+        "furealbl - тестировщик и дизайнер",
         "",
-        "Игра «Жизнь» — Джон Конвей, 1970",
-        "Два цвета — вариант Immigration",
+        "Игра «Жизнь» - Джон Конвей, 1970",
+        "Два цвета - вариант Immigration",
         "Школа 21",
         "",
-        "ВЕРТЕР — система проверки «Пир-21»",
+        "ВЕРТЕР - система проверки «Пир-21»",
         "",
         "Хоть раз посмотрите на свой код.",
         endings[rand() % CREDITS_ENDINGS],
@@ -1284,7 +1284,7 @@ void roll_credits(void) {
 void draw_credits(const char* const lines[], int top, int stopped) {
     erase();
     for (int i = 0; i < CREDITS_SIZE; i++) {
-        // Название и последнее «Спасибо, Вертер» жирным — как заголовок меню: это рамка титров.
+        // Название и последнее «Спасибо, Вертер» жирным - как заголовок меню: это рамка титров.
         chtype look = i == 0 || i == CREDITS_SIZE - 1 ? A_BOLD : A_NORMAL;
         attron(look);
         if (top + i >= 0 && top + i < LINES) say_in_middle(top + i, lines[i]);
@@ -1292,15 +1292,15 @@ void draw_credits(const char* const lines[], int top, int stopped) {
     }
     if (stopped) {
         attron(A_DIM);
-        say_in_middle(LINES - 2, "[ любая клавиша — дальше ]");
+        say_in_middle(LINES - 2, "[ любая клавиша - дальше ]");
         attroff(A_DIM);
     }
     refresh();
 }
 
-// Забирает событие мыши и проверяет, что это клик — левую кнопку отпустили (или ncurses сам склеил
-// нажатие с отпусканием, см. init_mouse). Да — пишет экранные строку и столбец в *y и *x
-// и возвращает 1. Нет — 0, *y и *x не трогает.
+// Забирает событие мыши и проверяет, что это клик - левую кнопку отпустили (или ncurses сам склеил
+// нажатие с отпусканием, см. init_mouse). Да - пишет экранные строку и столбец в *y и *x
+// и возвращает 1. Нет - 0, *y и *x не трогает.
 int mouse_click(int* y, int* x) {
     MEVENT event;
     int clicked = 0;
@@ -1395,7 +1395,7 @@ void draw_fence(int top, int left, int height, int width) {
 int is_window_big_enough(void) { return LINES >= HEIGHT + 3 && COLS >= WIDTH + 2; }
 
 // Две короткие строки вместо одной длинной: длинная в узком окне не печаталась совсем (столбец < 0).
-// Текущий размер виден сразу — понятно, насколько ещё растянуть окно.
+// Текущий размер виден сразу - понятно, насколько ещё растянуть окно.
 void ask_for_bigger_window(void) {
     char now[64];
     char need[64];
@@ -1417,15 +1417,15 @@ int is_letter_start(char byte) { return ((unsigned char)byte & 0xC0) != 0x80; }
 
 int read_key(void) {
     int key = getch();
-    // KEY_RESIZE — не нажатие: иначе растянутое окно закрывало титры и допечатывало реплику.
+    // KEY_RESIZE - не нажатие: иначе растянутое окно закрывало титры и допечатывало реплику.
     while ((key == KEY_MOUSE && !mouse_is_key()) || key == KEY_RESIZE) key = getch();
     if (key >= 0x80 && key <= 0xFF) flushinp();
     return key;
 }
 
-// Ждём, пока игрок отпустит клавиши. Пауза KEYS_SETTLE — чтобы окно успели увидеть. Потом читаем
+// Ждём, пока игрок отпустит клавиши. Пауза KEYS_SETTLE - чтобы окно успели увидеть. Потом читаем
 // и выбрасываем всё, пока KEYS_QUIET мс не придёт ни одной клавиши: зажатая клавиша автоповтором
-// шлёт себя каждые ~30 мс, и одного flushinp мало — следующий повтор закрыл бы окно.
+// шлёт себя каждые ~30 мс, и одного flushinp мало - следующий повтор закрыл бы окно.
 void hands_off_keyboard(void) {
     int key = OK;
     napms(KEYS_SETTLE);
